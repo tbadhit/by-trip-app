@@ -59,8 +59,11 @@ class CategoryPage extends StatelessWidget {
               color: kWhiteColor,
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                SizedBox(
+                  height: 10,
+                ),
                 Container(
                   width: 140,
                   height: 140,
@@ -86,6 +89,7 @@ class CategoryPage extends StatelessWidget {
                   height: 2,
                 ),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
                       width: 8,

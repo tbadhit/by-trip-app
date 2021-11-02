@@ -165,19 +165,19 @@ class _HomePageState extends State<HomePage> {
                         imageUrl: 'assets/icon_category1.png'),
                     IconCategory(
                         onTap: () {
-                          Navigator.pushNamed(context, '/login');
+                          Navigator.pushNamed(context, '/category');
                         },
                         name: 'Pantai',
                         imageUrl: 'assets/icon_category2.png'),
                     IconCategory(
                         onTap: () {
-                          Navigator.pushNamed(context, '/login');
+                          Navigator.pushNamed(context, '/category');
                         },
                         name: 'Camping',
                         imageUrl: 'assets/icon_category3.png'),
                     IconCategory(
                         onTap: () {
-                          Navigator.pushNamed(context, '/login');
+                          Navigator.pushNamed(context, '/category');
                         },
                         name: 'Curug',
                         imageUrl: 'assets/icon_category4.png'),
