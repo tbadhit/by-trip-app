@@ -14,7 +14,7 @@ class OnBoardingPage extends StatelessWidget {
           Container(
             width: double.infinity,
             height: double.infinity,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               image: DecorationImage(
                 fit: BoxFit.cover,
                 image: AssetImage(
@@ -23,12 +23,13 @@ class OnBoardingPage extends StatelessWidget {
               ),
             ),
           ),
-          SingleChildScrollView(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15),
             child: Center(
               child: Column(
                 children: [
                   SizedBox(
-                    height: 300,
+                    height: MediaQuery.of(context).size.height / 2.4 ,
                   ),
                   Text(
                     'Selamat Datang',
@@ -37,7 +38,7 @@ class OnBoardingPage extends StatelessWidget {
                       fontWeight: semiBold,
                     ),
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 10,
                   ),
                   Text(
@@ -49,8 +50,8 @@ class OnBoardingPage extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   Container(
-                    margin: EdgeInsets.only(top: 30),
-                    width: 300,
+                    margin: const EdgeInsets.only(top: 30),
+                    width: double.infinity,
                     decoration: BoxDecoration(
                         border: Border.all(color: Colors.white),
                         borderRadius: BorderRadius.circular(defaultRadius)),
@@ -68,17 +69,17 @@ class OnBoardingPage extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    margin: EdgeInsets.only(bottom: 100),
+                    margin: const EdgeInsets.only(bottom: 100),
                     child: CustomButton(
                       textStyle: GoogleFonts.poppins(color: kWhiteColor),
                       title: 'Daftar',
-                      width: 300,
-                      margin: EdgeInsets.only(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(
                         top: 20,
                         // bottom: 90,
                       ),
                       onPressed: () {
-                        Navigator.pushNamed(context, '/login');
+                        Navigator.pushNamed(context, '/register');
                       },
                     ),
                   ),

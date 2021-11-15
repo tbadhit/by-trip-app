@@ -1,26 +1,50 @@
+import 'dart:async';
+import 'package:by_trip/cubit/cubit.dart';
+import 'package:by_trip/models/models.dart';
 import 'package:by_trip/shared/theme.dart';
+import 'package:by_trip/ui/pages/home/main_page.dart';
 import 'package:by_trip/ui/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class DetailPage extends StatelessWidget {
-  const DetailPage({Key? key}) : super(key: key);
+class DetailPage extends StatefulWidget {
+  const DetailPage({Key? key, this.wisata}) : super(key: key);
+
+  final Wisata? wisata;
+
+  @override
+  State<DetailPage> createState() => _DetailPageState();
+}
+
+class _DetailPageState extends State<DetailPage> {
+  final Completer<GoogleMapController> _controller = Completer();
 
   @override
   Widget build(BuildContext context) {
+    var user = (context.read<UserCubit>().state as UserLoaded).user;
+    Marker _marker = Marker(
+        markerId: MarkerId(widget.wisata!.name!),
+        position: LatLng(double.parse(widget.wisata!.latitude!),
+            double.parse(widget.wisata!.longitude!)),
+        infoWindow: InfoWindow(title: widget.wisata!.name),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed));
+
     Widget backgroundImage() {
       return Container(
         width: double.infinity,
-        height: 383,
+        height: 330,
         decoration: BoxDecoration(
-            borderRadius: BorderRadius.only(
+            borderRadius: const BorderRadius.only(
               bottomLeft: Radius.circular(20),
               bottomRight: Radius.circular(20),
             ),
             image: DecorationImage(
               fit: BoxFit.cover,
-              image: AssetImage(
-                'assets/image_destination1.png',
+              image: NetworkImage(
+                widget.wisata!.image!,
               ),
             ),
             boxShadow: [
@@ -43,7 +67,7 @@ class DetailPage extends StatelessWidget {
           child: Column(
             children: [
               Container(
-                margin: EdgeInsets.only(top: 25),
+                margin: const EdgeInsets.only(top: 25),
                 child: Row(
                   children: [
                     Expanded(
@@ -52,7 +76,7 @@ class DetailPage extends StatelessWidget {
                         children: [
                           GestureDetector(
                             onTap: () {
-                              Navigator.pushNamed(context, '/main');
+                              Navigator.pop(context);
                             },
                             child: Container(
                               width: 33,
@@ -74,22 +98,56 @@ class DetailPage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.pushNamed(context, '/main');
-                          },
-                          child: Container(
-                            width: 33,
-                            height: 33,
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image: AssetImage(
-                                  'assets/icon_bookmark_top.png',
+                        BlocBuilder<BookmarkCubit, BookmarkState>(
+                          builder: (context, state) {
+                            if (state is BookmarkLoaded) {
+                              bool isBookmark = state.bookmarkItems.any(
+                                  (element) => element.id == widget.wisata!.id);
+                              return GestureDetector(
+                                onTap: () async {
+                                  if (isBookmark) {
+                                    bool result = await context
+                                        .read<BookmarkCubit>()
+                                        .removeCartItem(widget.wisata!.id!);
+                                    setState(() {
+                                      if (result) {
+                                        context
+                                            .read<BookmarkCubit>()
+                                            .getBookmarks(user);
+                                        displayToastMessage(
+                                            "Menghapus bookmark", context);
+                                      }
+                                    });
+                                  } else {
+                                    setState(() {
+                                      context
+                                          .read<BookmarkCubit>()
+                                          .addWisataToBookmark(widget.wisata!);
+                                      displayToastMessage(
+                                          "Berhasil di tambah ke bookmark", context);
+                                    });
+                                  }
+                                  setState(() {});
+                                },
+                                child: Container(
+                                  width: 33,
+                                  height: 33,
+                                  decoration: BoxDecoration(
+                                    image: DecorationImage(
+                                      image: AssetImage(
+                                        isBookmark
+                                            ? 'assets/icon_bookmark_fill.png'
+                                            : 'assets/icon_bookmark_top.png',
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ),
-                        ),
+                              );
+                            } else {
+                              return Center();
+                            }
+                          },
+                        )
                       ],
                     ),
                   ],
@@ -102,197 +160,186 @@ class DetailPage extends StatelessWidget {
     }
 
     Widget submitButton() {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CustomButton(
+      return CustomButton(
             textStyle: GoogleFonts.poppins(color: kWhiteColor),
-            margin: EdgeInsets.only(top: 670),
-            width: 200,
+            margin: const EdgeInsets.only(top: 20, bottom: 30),
+            width: MediaQuery.of(context).size.width,
             title: 'Gas!',
-            onPressed: () {
-              Navigator.pushNamed(context, '/main');
+            onPressed: () async {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const MainPage(initialPage: 1)));
             },
-          ),
-        ],
+          );
+    }
+
+    Widget maps() {
+      return SizedBox(
+        width: MediaQuery.of(context).size.width,
+        height: 170,
+        child: GoogleMap(
+          mapType: MapType.normal,
+          zoomControlsEnabled: false,
+          initialCameraPosition: CameraPosition(
+              target: LatLng(double.parse(widget.wisata!.latitude!),
+                  double.parse(widget.wisata!.longitude!)),
+              zoom: 17),
+          onMapCreated: (GoogleMapController controller) {
+            if (!_controller.isCompleted) {
+              _controller.complete(controller);
+            }
+          },
+          markers: {_marker},
+        ),
       );
     }
 
     Widget namePlace() {
-      return Column(
-        children: [
-          Container(
-            margin: EdgeInsets.only(
-              left: defaultMargin,
-              right: defaultMargin,
-              top: 350,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Gunung Salak',
-                        style: blackTextStyle.copyWith(
-                          fontSize: 16,
-                          fontWeight: bold,
+      return Padding(
+        padding:  EdgeInsets.symmetric(horizontal: defaultMargin),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(
+                top: 350,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.wisata!.name!,
+                          style: blackTextStyle.copyWith(
+                            fontSize: 16,
+                            fontWeight: bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(
-                        height: 4,
-                      ),
-                      Text(
-                        'Bogor',
-                        style: greyTextStyle.copyWith(
-                          fontWeight: light,
+                        const SizedBox(
+                          height: 4,
                         ),
-                      ),
-                    ],
+                        Text(
+                          widget.wisata!.city!,
+                          style: greyTextStyle.copyWith(
+                            fontWeight: light,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'Rp 29.000',
-                        style: blackTextStyle.copyWith(
-                          fontSize: 16,
-                          fontWeight: bold,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Rp ${widget.wisata!.price}',
+                          style: blackTextStyle.copyWith(
+                            fontSize: 16,
+                            fontWeight: bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(
-                        height: 4,
-                      ),
-                      Text(
-                        'per orang',
-                        style: greyTextStyle.copyWith(
-                          fontWeight: light,
+                        const SizedBox(
+                          height: 4,
                         ),
-                      ),
-                    ],
+                        Text(
+                          'per orang',
+                          style: greyTextStyle.copyWith(
+                            fontWeight: light,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Container(
-            margin: EdgeInsets.only(top: 10),
-            width: double.infinity,
-            height: 1,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(
-                  'assets/image_line.png',
+            Container(
+              margin: const EdgeInsets.only(top: 20),
+              width: double.infinity,
+              height: 1,
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage(
+                    'assets/image_line.png',
+                  ),
                 ),
               ),
             ),
-          ),
-          Container(
-            margin: EdgeInsets.only(
-              left: defaultMargin,
-              right: defaultMargin,
-              top: 10,
-            ),
-            height: 100,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 33,
-                            height: 33,
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image: AssetImage('assets/icon_place.png'),
+            Container(
+              margin: const EdgeInsets.only( top: 20, bottom: 20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 33,
+                              height: 33,
+                              decoration: const BoxDecoration(
+                                image: DecorationImage(
+                                  image: AssetImage('assets/icon_place.png'),
+                                ),
                               ),
                             ),
-                          ),
-                          SizedBox(
-                            width: 10,
-                          ),
-                          Text(
-                            'Cibodas, Kec. Jonggol, Bogor, Jawa Barat',
-                            style: blackTextStyle.copyWith(
-                              fontSize: 12,
-                              fontWeight: regular,
+                            const SizedBox(
+                              width: 10,
                             ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Row(
-                        children: [
-                          Container(
-                            width: 33,
-                            height: 33,
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image: AssetImage('assets/icon_open.png'),
+                            SizedBox(
+                              width: 269,
+                              child: Text(
+                                widget.wisata!.address!,
+                                style: blackTextStyle.copyWith(
+                                  fontSize: 12,
+                                  fontWeight: regular,
+                                ),
                               ),
                             ),
-                          ),
-                          SizedBox(
-                            width: 10,
-                          ),
-                          Text(
-                            'Buka 24 jam',
-                            style: blackTextStyle.copyWith(
-                              fontSize: 12,
-                              fontWeight: regular,
+                          ],
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Row(
+                          children: [
+                            Container(
+                              width: 33,
+                              height: 33,
+                              decoration: const BoxDecoration(
+                                image: DecorationImage(
+                                  image: AssetImage('assets/icon_open.png'),
+                                ),
+                              ),
                             ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ],
+                            const SizedBox(
+                              width: 10,
+                            ),
+                            Text(
+                              'Buka ${widget.wisata!.open}',
+                              style: blackTextStyle.copyWith(
+                                fontSize: 12,
+                                fontWeight: regular,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
-      );
-    }
-
-    Widget mapsImage() {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 320,
-            height: 170,
-            margin: EdgeInsets.only(top: 580),
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
-                ),
-                image: DecorationImage(
-                  image: AssetImage(
-                    'assets/image_maps.png',
-                  ),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: kGreyColor,
-                    blurRadius: 50.0,
-                    spreadRadius: -40.0,
-                  )
-                ]),
-          ),
-        ],
+            maps(),
+            submitButton()
+          ],
+        ),
       );
     }
 
@@ -304,11 +351,13 @@ class DetailPage extends StatelessWidget {
             backgroundImage(),
             topButton(),
             namePlace(),
-            mapsImage(),
-            submitButton()
           ],
         ),
       ),
     );
+  }
+
+  displayToastMessage(String message, BuildContext context) {
+    Fluttertoast.showToast(msg: message);
   }
 }

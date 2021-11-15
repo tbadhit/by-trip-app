@@ -1,18 +1,52 @@
+import 'package:by_trip/cubit/cubit.dart';
+import 'package:by_trip/models/models.dart';
 import 'package:by_trip/ui/widgets/custom_button.dart';
 import 'package:by_trip/ui/widgets/custom_text_form_field.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../shared/theme.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class RegisterPage extends StatelessWidget {
+class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
+
+  @override
+  State<RegisterPage> createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  TextEditingController nameController = TextEditingController();
+
+  TextEditingController emailController = TextEditingController();
+
+  TextEditingController passwordController = TextEditingController();
+
+  late List<String> cities;
+  late String selectedCity;
+  final _formKey = GlobalKey<FormState>();
+
+  displayToastMessage(String message, BuildContext context) {
+    Fluttertoast.showToast(msg: message);
+  }
+
+  bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    cities = ['Makassar', 'Tulungagung', 'Banyumas'];
+    selectedCity = cities[0];
+  }
 
   @override
   Widget build(BuildContext context) {
     Widget title() {
       return Center(
         child: Container(
-          margin: EdgeInsets.only(top: 30),
+          margin: const EdgeInsets.only(top: 30),
           child: Text(
             'Daftar',
             style: blackTextStyle.copyWith(
@@ -28,8 +62,8 @@ class RegisterPage extends StatelessWidget {
       return Container(
         width: 310,
         height: 210,
-        margin: EdgeInsets.symmetric(horizontal: 50),
-        decoration: BoxDecoration(
+        margin: const EdgeInsets.symmetric(horizontal: 50),
+        decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/image_register.png'),
           ),
@@ -40,30 +74,75 @@ class RegisterPage extends StatelessWidget {
     Widget inputSection() {
       Widget nameInput() {
         return CustomTextFormField(
+          controller: nameController,
           title: 'Nama Lengkap',
           hintText: 'Nama lengkapmu',
+          keyboardType: TextInputType.text,
         );
       }
 
       Widget emailInput() {
         return CustomTextFormField(
+          controller: emailController,
           title: 'Email',
-          hintText: 'Alamat emailmu',
+          hintText: 'Email',
+          obsecureText: false,
+          keyboardType: TextInputType.emailAddress,
         );
       }
 
       Widget passwordInput() {
         return CustomTextFormField(
+          controller: passwordController,
           title: 'Password',
           hintText: 'Password',
           obsecureText: true,
+          keyboardType: TextInputType.text,
         );
       }
 
       Widget cityInput() {
-        return CustomTextFormField(
-          title: 'Pilih Kota',
-          hintText: 'Kotamu',
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 30),
+          child: Column(
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: Text(
+                  "City",
+                  style: TextStyle(color: kBlackColor),
+                ),
+              ),
+              const SizedBox(
+                height: 5,
+              ),
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey)),
+                child: DropdownButton(
+                    isExpanded: true,
+                    underline: SizedBox(),
+                    value: selectedCity,
+                    items: cities
+                        .map((e) => DropdownMenuItem(
+                              value: e,
+                              child: Text(
+                                e,
+                                style: const TextStyle(color: Colors.black),
+                              ),
+                            ))
+                        .toList(),
+                    onChanged: (item) {
+                      setState(() {
+                        selectedCity = item as String;
+                      });
+                    }),
+              ),
+            ],
+          ),
         );
       }
 
@@ -71,15 +150,58 @@ class RegisterPage extends StatelessWidget {
         return CustomButton(
           textStyle: GoogleFonts.poppins(color: kWhiteColor),
           title: 'Daftar',
-          onPressed: () {
-            Navigator.pushNamed(context, '/main');
+          onPressed: () async {
+            if (_formKey.currentState!.validate()) {
+              if (nameController.text.length < 3) {
+                displayToastMessage(
+                    "name must me atleast 3 characters", context);
+              } else if (!emailController.text.contains("@")) {
+                displayToastMessage("Email address is not Valid", context);
+              } else if (passwordController.text.length < 6) {
+                displayToastMessage(
+                    "Password must be atleast 6 characters", context);
+              } else {
+                User user = User(
+                    name: nameController.text,
+                    email: emailController.text,
+                    city: selectedCity);
+
+                setState(() {
+                  isLoading = true;
+                });
+
+                await context
+                    .read<UserCubit>()
+                    .registrasi(user, passwordController.text);
+
+                UserState state = context.read<UserCubit>().state;
+
+                if (state is UserLoaded) {
+                  var userState =
+                      (context.read<UserCubit>().state as UserLoaded).user;
+                  context.read<WisataCubit>().getWisata(userState);
+                  context.read<BookmarkCubit>().getBookmarks(userState);
+                  Navigator.pushNamed(context, '/main');
+                } else {
+                  showTopSnackBar(
+                    context,
+                    CustomSnackBar.error(
+                      message: (state as UserLoadingFailed).message,
+                    ),
+                  );
+                  setState(() {
+                    isLoading = false;
+                  });
+                }
+              }
+            }
           },
         );
       }
 
       return Container(
-        margin: EdgeInsets.only(top: 20),
-        padding: EdgeInsets.symmetric(
+        margin: const EdgeInsets.only(top: 20),
+        padding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 30,
         ),
@@ -89,14 +211,21 @@ class RegisterPage extends StatelessWidget {
             defaultRadius,
           ),
         ),
-        child: Column(
-          children: [
-            nameInput(),
-            emailInput(),
-            passwordInput(),
-            cityInput(),
-            submitButton(),
-          ],
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              nameInput(),
+              emailInput(),
+              passwordInput(),
+              cityInput(),
+              (isLoading == true)
+                  ? Center(
+                      child: loadingIndicator,
+                    )
+                  : submitButton(),
+            ],
+          ),
         ),
       );
     }
@@ -104,9 +233,9 @@ class RegisterPage extends StatelessWidget {
     Widget tacButton() {
       return Container(
         alignment: Alignment.center,
-        margin: EdgeInsets.only(
-          top: 40,
-          bottom: 30,
+        margin: const EdgeInsets.only(
+          top: 20,
+          bottom: 40,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -118,7 +247,7 @@ class RegisterPage extends StatelessWidget {
                 fontWeight: light,
               ),
             ),
-            SizedBox(
+            const SizedBox(
               width: 5,
             ),
             GestureDetector(
@@ -145,13 +274,16 @@ class RegisterPage extends StatelessWidget {
           padding: EdgeInsets.symmetric(
             horizontal: defaultMargin,
           ),
-          child: ListView(
-            children: [
-              title(),
-              imageLogin(),
-              inputSection(),
-              tacButton(),
-            ],
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                title(),
+                imageLogin(),
+                inputSection(),
+                tacButton(),
+              ],
+            ),
           ),
         ),
       ),

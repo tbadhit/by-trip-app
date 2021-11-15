@@ -5,29 +5,40 @@ class CustomTextFormField extends StatelessWidget {
   final String title;
   final String hintText;
   final bool obsecureText;
+  final TextEditingController controller;
+  final TextInputType keyboardType;
   const CustomTextFormField({
     Key? key,
     required this.title,
     required this.hintText,
+    required this.keyboardType,
     this.obsecureText = false,
+    required this.controller,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: 20),
+      margin: const EdgeInsets.only(bottom: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
           ),
-          SizedBox(
+          const SizedBox(
             height: 6,
           ),
           TextFormField(
+            controller: controller,
+            keyboardType: keyboardType,
             cursorColor: kBlackColor,
             obscureText: obsecureText,
+            validator: (value) {
+              if (value!.isEmpty) {
+                return 'Please enter field';
+              }
+            },
             decoration: InputDecoration(
               hintText: hintText,
               border: OutlineInputBorder(

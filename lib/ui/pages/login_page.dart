@@ -1,18 +1,35 @@
+import 'package:by_trip/cubit/cubit.dart';
 import 'package:by_trip/ui/widgets/custom_button.dart';
 import 'package:by_trip/ui/widgets/custom_text_form_field.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../../shared/theme.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  TextEditingController emailController = TextEditingController();
+
+  TextEditingController passwordController = TextEditingController();
+
+  final _formKey = GlobalKey<FormState>();
+
+  bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     Widget title() {
       return Center(
         child: Container(
-          margin: EdgeInsets.only(top: 30),
+          margin: const EdgeInsets.only(top: 30),
           child: Text(
             'Masuk',
             style: blackTextStyle.copyWith(
@@ -26,10 +43,10 @@ class LoginPage extends StatelessWidget {
 
     Widget imageLogin() {
       return Container(
-        width: 310,
+        width: double.infinity,
         height: 210,
-        margin: EdgeInsets.symmetric(horizontal: 50),
-        decoration: BoxDecoration(
+        margin: const EdgeInsets.symmetric(horizontal: 50),
+        decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/image_login.png'),
           ),
@@ -40,16 +57,20 @@ class LoginPage extends StatelessWidget {
     Widget inputSection() {
       Widget emailInput() {
         return CustomTextFormField(
+          controller: emailController,
           title: 'Email Address',
           hintText: 'Your email address',
+          keyboardType: TextInputType.emailAddress
         );
       }
 
       Widget passwordInput() {
         return CustomTextFormField(
+          controller: passwordController,
           title: 'Password',
           hintText: 'Your password',
           obsecureText: true,
+          keyboardType: TextInputType.text
         );
       }
 
@@ -57,15 +78,47 @@ class LoginPage extends StatelessWidget {
         return CustomButton(
           textStyle: GoogleFonts.poppins(color: kWhiteColor),
           title: 'Masuk',
-          onPressed: () {
-            Navigator.pushNamed(context, '/main');
+          onPressed: () async {
+            if (_formKey.currentState!.validate()) {
+              setState(() {
+                isLoading = true;
+              });
+
+              try {
+                await context
+                    .read<UserCubit>()
+                    .login(emailController.text, passwordController.text);
+              } catch (e) {
+                print(e);
+              }
+
+              UserState state = context.read<UserCubit>().state;
+
+              if (state is UserLoaded) {
+                var user = (context.read<UserCubit>().state as UserLoaded).user;
+                context.read<WisataCubit>().getWisata(user);
+                context.read<BookmarkCubit>().getBookmarks(user);
+                Navigator.pushNamedAndRemoveUntil(
+                    context, '/main', (Route<dynamic> route) => false);
+              } else {
+                showTopSnackBar(
+                  context,
+                  const CustomSnackBar.error(
+                    message: "Login Failed",
+                  ),
+                );
+                setState(() {
+                  isLoading = false;
+                });
+              }
+            }
           },
         );
       }
 
       return Container(
-        margin: EdgeInsets.only(top: 20),
-        padding: EdgeInsets.symmetric(
+        margin: const EdgeInsets.only(top: 20),
+        padding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 30,
         ),
@@ -75,12 +128,19 @@ class LoginPage extends StatelessWidget {
             defaultRadius,
           ),
         ),
-        child: Column(
-          children: [
-            emailInput(),
-            passwordInput(),
-            submitButton(),
-          ],
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              emailInput(),
+              passwordInput(),
+              (isLoading == true)
+                  ? Center(
+                      child: loadingIndicator,
+                    )
+                  : submitButton(),
+            ],
+          ),
         ),
       );
     }
@@ -88,9 +148,7 @@ class LoginPage extends StatelessWidget {
     Widget tacButton() {
       return Container(
         alignment: Alignment.center,
-        margin: EdgeInsets.only(
-          top: 40,
-        ),
+        margin: const EdgeInsets.only(top: 20, bottom: 40),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -101,7 +159,7 @@ class LoginPage extends StatelessWidget {
                 fontWeight: light,
               ),
             ),
-            SizedBox(
+            const SizedBox(
               width: 5,
             ),
             GestureDetector(
@@ -130,6 +188,7 @@ class LoginPage extends StatelessWidget {
           ),
           child: SingleChildScrollView(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 title(),
                 imageLogin(),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 double defaultMargin = 24.0;
@@ -24,6 +25,11 @@ TextStyle greyTextStyle = GoogleFonts.poppins(
 
 TextStyle yellowTextStyle = GoogleFonts.poppins(
   color: kPrimaryColor,
+);
+
+Widget loadingIndicator = SpinKitRing(
+  color: kPrimaryColor,
+  size: 45,
 );
 
 FontWeight light = FontWeight.w300;

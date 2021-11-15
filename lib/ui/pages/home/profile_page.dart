@@ -1,61 +1,49 @@
+import 'package:by_trip/cubit/cubit.dart';
 import 'package:by_trip/shared/theme.dart';
-import 'package:by_trip/ui/widgets/custom_bottom_navigation_item.dart';
-import 'package:by_trip/ui/widgets/custom_button.dart';
-import 'package:by_trip/ui/widgets/custom_text_form_field.dart';
+import 'package:by_trip/ui/pages/edit_profile_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
 
   @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+  @override
   Widget build(BuildContext context) {
+    var user = (context.read<UserCubit>().state as UserLoaded).user;
     Widget title() {
       return Container(
-        margin: EdgeInsets.only(top: 30),
-        child: Row(
-          children: [
-            GestureDetector(
-              onTap: () {
-                Navigator.pushNamed(context, '/main');
-              },
-              child: Container(
-                width: 33,
-                height: 33,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: AssetImage(
-                      'assets/icon_back.png',
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(
-              width: 20,
-            ),
-            Text(
-              'Profile',
-              style: blackTextStyle.copyWith(
-                fontSize: 24,
-                fontWeight: semiBold,
-              ),
-            ),
-          ],
+        margin: const EdgeInsets.only(top: 30),
+        child: Text(
+          'Profile',
+          style: blackTextStyle.copyWith(
+            fontSize: 24,
+            fontWeight: semiBold,
+          ),
         ),
       );
     }
 
     Widget imageLogin() {
       return Padding(
-        padding: const EdgeInsets.only(top: 50),
+        padding: const EdgeInsets.only(top: 90),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              margin: EdgeInsets.only(top: 40),
-              width: 200,
-              height: 200,
+              margin: const EdgeInsets.only(top: 40),
+              width: 150,
+              height: 150,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
@@ -75,24 +63,25 @@ class ProfilePage extends StatelessWidget {
         padding: const EdgeInsets.only(top: 270),
         child: Column(
           children: [
-            SizedBox(
+            const SizedBox(
               height: 30,
             ),
             Text(
-              'Saliem',
+              user.name,
               style: blackTextStyle.copyWith(
                 fontSize: 24,
                 fontWeight: regular,
               ),
             ),
+            
             Text(
-              'Bogor',
+              user.city,
               style: greyTextStyle.copyWith(
                 fontSize: 18,
                 fontWeight: regular,
               ),
             ),
-            SizedBox(
+            const SizedBox(
               height: 30,
             ),
             Row(
@@ -100,11 +89,13 @@ class ProfilePage extends StatelessWidget {
               children: [
                 GestureDetector(
                   onTap: () {
-                    Navigator.pushNamed(context, '/edit-profile');
+                    
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => EditProfilePage(user: user,)));
+
                   },
                   child: Container(
-                    width: 36,
-                    height: 36,
+                    width: 45,
+                    height: 45,
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       image: DecorationImage(
@@ -115,16 +106,17 @@ class ProfilePage extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(
-                  width: 50,
+                const SizedBox(
+                  width: 30,
                 ),
                 GestureDetector(
                   onTap: () {
-                    Navigator.pushNamed(context, '/login');
+                    Navigator.pushNamedAndRemoveUntil(
+                        context, '/login', (Route<dynamic> route) => false);
                   },
                   child: Container(
-                    width: 36,
-                    height: 36,
+                    width: 45,
+                    height: 45,
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       image: DecorationImage(

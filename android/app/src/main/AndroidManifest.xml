@@ -1,8 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.by_trip">
    <application
-        android:label="by_trip"
+        android:label="By Trip"
         android:icon="@mipmap/ic_launcher">
+        <meta-data android:name="com.google.android.geo.API_KEY"
+               android:value="AIzaSyA961qUUYeU2tnBuk4gS1fpiXVjnCFnbcQ"/>
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"

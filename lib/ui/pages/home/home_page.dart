@@ -1,8 +1,14 @@
+import 'package:by_trip/cubit/cubit.dart';
+import 'package:by_trip/models/models.dart';
+import 'package:by_trip/ui/pages/category_page.dart';
+import 'package:by_trip/ui/pages/detail_page.dart';
+import 'package:by_trip/ui/widgets/custom_tabbar.dart';
 import 'package:by_trip/ui/widgets/destination_card.dart';
 import 'package:by_trip/ui/widgets/icon_category.dart';
 import 'package:flutter/material.dart';
 import 'package:by_trip/shared/theme.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -19,11 +25,7 @@ class _HomePageState extends State<HomePage> {
     "assets/carousel3.png"
   ];
 
-  final List<String> listImages = [
-    'assets/carousel1.png',
-    'assets/carousel2.png',
-    'assets/carousel3.png',
-  ];
+  int selectedIndex = 0;
 
   @override
   void initState() {
@@ -46,7 +48,10 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Hello Muflikhan!',
+                    'Hello ' +
+                        (context.read<UserCubit>().state as UserLoaded)
+                            .user
+                            .name,
                     style: blackTextStyle.copyWith(
                       fontSize: 16,
                       fontWeight: semiBold,
@@ -83,34 +88,16 @@ class _HomePageState extends State<HomePage> {
     }
 
     Widget categories() {
-      return Row(
-        children: [
-          SizedBox(
-            width: 30,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: Text(
-              'Semua',
-              style:
-                  blackTextStyle.copyWith(fontSize: 12, fontWeight: semiBold),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 10, left: 15),
-            child: Text(
-              'Terkenal',
-              style: greyTextStyle.copyWith(fontSize: 12, fontWeight: semiBold),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 10, left: 15),
-            child: Text(
-              'Rekomendasi',
-              style: greyTextStyle.copyWith(fontSize: 12, fontWeight: semiBold),
-            ),
-          ),
-        ],
+      return Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: CustomTabBar(
+            selectedIndex: selectedIndex,
+            titles: const ["Semua", "Terkenal", "Rekomendasi"],
+            onTap: (index) {
+              setState(() {
+                selectedIndex = index;
+              });
+            }),
       );
     }
 
@@ -159,28 +146,44 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     IconCategory(
                         onTap: () {
-                          Navigator.pushNamed(context, '/category');
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      CategoryPage(selectedIndex: 0)));
                         },
                         name: 'Gunung',
                         imageUrl: 'assets/icon_category1.png'),
                     IconCategory(
                         onTap: () {
-                          Navigator.pushNamed(context, '/login');
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      CategoryPage(selectedIndex: 2)));
                         },
                         name: 'Pantai',
                         imageUrl: 'assets/icon_category2.png'),
                     IconCategory(
                         onTap: () {
-                          Navigator.pushNamed(context, '/login');
-                        },
-                        name: 'Camping',
-                        imageUrl: 'assets/icon_category3.png'),
-                    IconCategory(
-                        onTap: () {
-                          Navigator.pushNamed(context, '/login');
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      CategoryPage(selectedIndex: 1)));
                         },
                         name: 'Curug',
                         imageUrl: 'assets/icon_category4.png'),
+                    IconCategory(
+                        onTap: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      CategoryPage(selectedIndex: 3)));
+                        },
+                        name: 'Camping',
+                        imageUrl: 'assets/icon_category3.png'),
                   ],
                 ),
               ),
@@ -191,42 +194,35 @@ class _HomePageState extends State<HomePage> {
     }
 
     Widget popularDestinations() {
-      return SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Padding(
-          padding: const EdgeInsets.only(top: 10),
-          child: Row(
-            children: [
-              DestinationCard(
-                name: 'Gunung Bromo',
-                city: 'Pasuruan',
-                imageUrl: 'assets/image_reccomend1.png',
-                onTap: () {
-                  Navigator.pushNamed(context, '/detail');
-                },
-                rating: 4.5,
-              ),
-              DestinationCard(
-                name: 'Gunung Semeru',
-                city: 'Malang',
-                imageUrl: 'assets/image_reccomend2.png',
-                onTap: () {
-                  Navigator.pushNamed(context, '/edit-profile');
-                },
-                rating: 4.5,
-              ),
-              DestinationCard(
-                name: 'Gunung Bromo',
-                city: 'Pasuruan',
-                imageUrl: 'assets/image_reccomend1.png',
-                onTap: () {
-                  Navigator.pushNamed(context, '/login');
-                },
-                rating: 3.5,
-              ),
-            ],
-          ),
-        ),
+      return SizedBox(
+        width: double.infinity,
+        height: 250,
+        child: BlocBuilder<WisataCubit, WisataState>(builder: (_, state) {
+          if (state is WisataLoaded) {
+            List<Wisata> listWisata = state.item;
+
+            return ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                Row(
+                    children: listWisata
+                        .map((wisata) => GestureDetector(
+                            onTap: () {
+                              Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) =>
+                                      DetailPage(wisata: wisata)));
+                            },
+                            child:
+                                DestinationCard(wisata: wisata, rating: 4.5)))
+                        .toList())
+              ],
+            );
+          } else {
+            return Center(
+              child: loadingIndicator,
+            );
+          }
+        }),
       );
     }
 

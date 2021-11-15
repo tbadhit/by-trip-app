@@ -1,25 +1,29 @@
+import 'package:by_trip/models/models.dart';
 import 'package:by_trip/shared/theme.dart';
 import 'package:flutter/material.dart';
 
 class ExploreCard extends StatelessWidget {
-  const ExploreCard({Key? key}) : super(key: key);
+  const ExploreCard({Key? key, required this.wisata}) : super(key: key);
+  final Wisata wisata;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 350,
-      height: 300,
-      child: Stack(
-        children: [
-          Container(
-            margin: EdgeInsets.only(top: 30),
-            width: 270,
-            height: 140,
-            decoration: BoxDecoration(
-                color: kWhiteColor,
-                borderRadius: BorderRadius.circular(defaultRadius)),
+    return Stack(
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 50),
+          width: 270,
+          height: 120,
+          child: Material(
+            color: kWhiteColor,
+            borderRadius: BorderRadius.circular(defaultRadius),
+            elevation: 3,
           ),
-          Column(
+        ),
+        Positioned(
+          bottom: 30,
+          left: 25,
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -31,25 +35,25 @@ class ExploreCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                       image: DecorationImage(
                         fit: BoxFit.cover,
-                        image: AssetImage('assets/image_explore_card.png'),
+                        image: NetworkImage(wisata.image!),
                       ),
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(top: 35, left: 80),
+                    padding: const EdgeInsets.only(top: 60, left: 80),
                     child: Row(
                       children: [
                         Container(
                           width: 15,
                           height: 15,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             image: DecorationImage(
                               fit: BoxFit.cover,
                               image: AssetImage('assets/icon_star.png'),
                             ),
                           ),
                         ),
-                        SizedBox(
+                        const SizedBox(
                           width: 4,
                         ),
                         Text(
@@ -64,18 +68,18 @@ class ExploreCard extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(
+              const SizedBox(
                 height: 10,
               ),
               Text(
-                'Puncak Bogor',
+                wisata.name!,
                 style: blackTextStyle.copyWith(
-                  fontSize: 20,
+                  fontSize: 15,
                   fontWeight: bold,
                 ),
               ),
               Text(
-                'Bogor, Jawa Barat',
+                wisata.city!,
                 style: greyTextStyle.copyWith(
                   fontSize: 12,
                   fontWeight: medium,
@@ -83,8 +87,8 @@ class ExploreCard extends StatelessWidget {
               ),
             ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
